@@ -1,13 +1,17 @@
-from channels.auth import AuthMiddlewareStack
-from channels.routing import ProtocolTypeRouter, URLRouter
-from backend.socket_routing2 import websocket_urlpatterns
+from channels.routing import ProtocolTypeRouter
+from channels import Group
 
 
-application = ProtocolTypeRouter({
-    # (http->django views is added by default)
-    'websocket': AuthMiddlewareStack(
-        URLRouter(
-            websocket_urlpatterns
-        )
-    ),
-})
+# def ws_connect(message):
+#     print("connect", message)
+#     Group('users').add(message.reply_channel)
+
+
+# def ws_disconnect(message):
+#     Group('users').discard(message.reply_channel)   
+
+
+# channel_routing = [
+#     route('websocket.connect', ws_connect),
+#     route('websocket.disconnect', ws_disconnect),
+# ]

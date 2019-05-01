@@ -23,6 +23,7 @@ hyperlink==18.0.0
 idna==2.8
 incremental==17.5.0
 msgpack==0.6.1
+notifications==0.3.2
 psycopg2-binary==2.7.7
 psycopg2==2.7.7
 PyHamcrest==1.9.0

@@ -59,9 +59,6 @@ class Game(models.Model):
 
 
 class Round(models.Model):
-    player_a_time = models.DateTimeField(default=datetime.now, blank=False)
-    player_b_time = models.DateTimeField(default=datetime.now, blank=False)
-
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
     question = models.ForeignKey(Question, default=None, on_delete=models.DO_NOTHING, blank=True, null=True)
 

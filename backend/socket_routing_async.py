@@ -25,7 +25,6 @@ class GameController(AsyncWebsocketConsumer):
         self.game_group = 'game_%s' % self.game_uuid
         
         self.user = await self.get_user()
-        print(self.user.username, 'connected to socket')
 
         await self.channel_layer.group_add(
             self.game_group,
@@ -33,7 +32,6 @@ class GameController(AsyncWebsocketConsumer):
         )
 
         await self.accept()
-        await self.send_game_update()
     
     @property
     @database_sync_to_async
@@ -55,49 +53,35 @@ class GameController(AsyncWebsocketConsumer):
     async def save_connected(self):
         game = await self.game
         if not game.data:
-            game.data = {
-                'connected': [],
-                'round': self.initialize_round_data(),
-                'score': self.players_obj(0) 
-            }
+            game.data = self.initialize_game_data()
         else:
-            print("!!!!")
-            connected = game.data['connected']
-            connected.append(self.user.username)
-            game.data['connected'] = list(set(connected)) # remove dublicates
-            # await database_sync_to_async(game.save)()
-        # import pdb; pdb.set_trace()
-        # await game.save()
-        # await database_sync_to_async(game.save)()
-        await self.save(game)
-
-        print('notify connected')
+            game.data = {
+                **game.data,
+                'connected': list(set(connected))
+            }
+        await database_sync_to_async(game.save)()
         await self.send(text_data=json.dumps({
             'type': 'notification',
-            'data': 'Connected.'
+            'data': 'Welcome, %s' % self.user.username
         }))
-        
+
 
     def initialize_round_data(self):
         player_data = {
             'timestamp': None,
-            'is_correct': None
+            'is_correct': None,
+            'answered': None
         }
         return self.players_obj(player_data)
 
     async def check_all_connected(self):
         game = await self.game
-        print("game.data", game.data, game)
-        print("        ", game.data['connected'])
-
         if len(game.data['connected']) == 0:
             return False
 
         for u in game.players.values():
-            print("---", u['username'], game.data['connected'], u['username'] in game.data['connected'])
             if u['username'] not in game.data['connected']:
                 return False
-        
         return True
 
     async def disconnect(self, close_code):
@@ -110,7 +94,6 @@ class GameController(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         data = text_data_json['data']
         type = text_data_json['type']
-        print("~~", "receive", self.user.username, data)
 
         if type == 'game_connect':
             await self.game_connect(text_data_json)
@@ -128,7 +111,6 @@ class GameController(AsyncWebsocketConsumer):
         game = await self.game
         if game.state != 'in_progress':
             await self.new_round()
-            await database_sync_to_async(game.save)()
         else:
             await self.send_question_update()
 
@@ -138,47 +120,58 @@ class GameController(AsyncWebsocketConsumer):
         await self.send_game_update()
     
     async def game_connect(self, event):
-        print('game_connect')
         game = await self.game
         data = event['data']
-        print("data: ", data)
+        
         if data == 'ok':
             print('connect', self.user)
             await self.save_connected()
             players_are_connected = await self.check_all_connected()
 
             if players_are_connected:
-                print('all are connected')
                 await self.start_game()
         else:
             game.state = GameState.DECLINED
             game.finished = datetime.now()
             await database_sync_to_async(game.save)()
-            await self.send_game_update()
+        await self.send_game_update()
     
     async def get_current_round(self):
-        return await self.game.rounds.order_by('-id')[0]
+        current_round = await self.game.rounds.order_by('-id')[0]
+        return current_round
     
     async def send_game_update(self):
+        game = await self.game
         await self.channel_layer.group_send(
             self.game_group,
             {
                 'type': 'game_update',
-                'data': GameSerializer().to_representation(await self.game)
+                'data': GameSerializer().to_representation(game)
             }
         )
     
     async def game_update(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'game_update',
+            'data': event['data']
+        }))
+    
+    def scores_update(self, event):
+        # self.send(text_data=json.dumps({
+        #     'type': 'scores_update',
+        #     'data': event['data']
+        # }))
         pass
 
     async def send_score_update(self):
-        await self.channel_layer.group_send(
-            self.game_group,
-            {
-                'type': 'scores_update',
-                'data': await self.game.data['score']
-            }
-        )
+        pass
+        # await self.channel_layer.group_send(
+        #     self.game_group,
+        #     {
+        #         'type': 'scores_update',
+        #         'data': await self.game.data['score']
+        #     }
+        # )
     
     async def send_question_update(self):
         current_round = await self.get_current_round()
@@ -203,20 +196,14 @@ class GameController(AsyncWebsocketConsumer):
         return question
 
     async def new_round(self):
-        game = self.game
-        game.data['score'] = self.players_obj(0)
+        game = await self.game
+         game.data['round'] = self.initialize_round_data()
         await database_sync_to_async(game.save)()
+
         question = await self.get_question()
-        self.current_round = Round.objects.create(game=self.game, question=question)
+        self.current_round = Round.objects.create(game=game, question=question)
         await self.send_question_update()
 
-    # def game_message(self, event):
-    #     data = event['data']
-
-    #     self.send(text_data=json.dumps({
-    #         'data': data
-    #     }))
-    
     async def check_all_answered(self):
         game = await self.game
         current_round = self.get_current_round()
@@ -235,8 +222,6 @@ class GameController(AsyncWebsocketConsumer):
         player_a = game.players.values()[0]['username']
         player_b = game.players.values()[1]['username']
 
-        # print("select winner:", round_data[player_a]['timestamp'], round_data[player_b]['timestamp'])
-
         if round_data[player_a]['is_correct'] and round_data[player_b]['is_correct']:
             winner = player_a if round_data[player_a]['timestamp'] < round_data[player_b]['timestamp'] else player_b
         elif round_data[player_a]['is_correct'] and not round_data[player_b]['is_correct']:
@@ -248,19 +233,19 @@ class GameController(AsyncWebsocketConsumer):
         
         if winner:
             game.data['score'][winner] = game.data['score'][winner] + QUESTION_POINTS
+            await database_sync_to_async(game.save)()
             current_round.winner = Player.objects.get(username=winner)
             await database_sync_to_async(current_round.save)()
 
     async def send_round_winner(self):
         current_round = self.get_current_round()
-        data = {
-            'type': 'round_winner',
-            'data': current_round.winner.username if current_round.winner else None
-        }
 
         await self.channel_layer.group_send(
             self.game_group,
-            data
+            {
+                'type': 'round_winner',
+                'data': current_round.winner.username if current_round.winner else None
+            }
         )
 
     async def is_score_a_tie(self):
@@ -305,32 +290,47 @@ class GameController(AsyncWebsocketConsumer):
 
     async def initialize_next_round(self):
         await self.new_round()
+        await self.send_score_update()
+        await self.send_game_update()
 
     async def question_answer(self, event):
         data = event['data']
-        print("~~", 'question_answer', self.user.username, data)
         game = await self.game
         user = self.user.username
         current_round = await self.get_current_round()
 
         is_correct = data == current_round.question.correct_answer()
-
         game.data['round'][user] = {
             'timestamp': datetime.now().timestamp(),
-            'is_correct': is_correct
+            'is_correct': is_correct,
+            'answered': data
         }
         await database_sync_to_async(game.save)()
 
-        if await self.check_all_answered():
-            print("self.check_all_answered()", True)
+        all_answered = await self.check_all_answered()
+        if all_answered:
             await self.select_round_winner()
             await self.send_round_winner()
 
-            if await self.check_game_end():
+            game_ended = await self.check_game_end()
+            if game_ended:
                 await self.finish_game()
                 await self.send_game_update()
             else:
                 await self.initialize_next_round()
+
+    async def question_update(self, event):
+        await self.send(text_data=json.dumps({
+            'type': 'question_update',
+            'data': event['data']
+        }))
+
+    async def round_winner(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'round_winner',
+            'data': event['data']
+        }))
+
 
 websocket_urlpatterns = [
     url(r'^ws/game/(?P<user_token>[^/]+)/(?P<game_uuid>[^/]+)/$', GameController),

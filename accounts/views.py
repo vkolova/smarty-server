@@ -1,12 +1,12 @@
+from django.contrib.auth.models import User
 from django.shortcuts import render
-from django.contrib.auth import get_user_model, models
 
+from rest_framework import status
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework.generics import CreateAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
-from rest_framework.authtoken.models import Token
-from rest_framework.authtoken.views import ObtainAuthToken
-from rest_framework import status
 from rest_framework.views import APIView
 
 from accounts.serializers import CreateUserSerializer
@@ -34,7 +34,10 @@ class CreateUserAPIView(CreateAPIView):
 
 class LoginUserAPIView(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data, context={'request': request})
+        serializer = self.serializer_class(
+            data=request.data,
+            context={'request': request}
+        )
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
@@ -42,7 +45,7 @@ class LoginUserAPIView(ObtainAuthToken):
 
 
 class LogoutUserAPIView(APIView):
-    queryset = models.User.objects.all()
+    queryset = User.objects.all()
 
     def get(self, request, format=None):
         request.user.auth_token.delete()

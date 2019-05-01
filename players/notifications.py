@@ -1,6 +1,5 @@
 from exponent_server_sdk import DeviceNotRegisteredError
 from exponent_server_sdk import PushClient
-from exponent_server_sdk import PushMessage
 from exponent_server_sdk import PushResponseError
 from exponent_server_sdk import PushServerError
 from requests.exceptions import ConnectionError
@@ -12,7 +11,6 @@ def send_push_message(message):
     except PushServerError as exc:
         raise
     except (ConnectionError, HTTPError) as exc:
-        # raise self.retry(exc=exc)
         raise
     try:
         response.validate_response()
@@ -20,5 +18,4 @@ def send_push_message(message):
         from notifications.models import PushToken
         PushToken.objects.filter(token=token).update(active=False)
     except PushResponseError as exc:
-        # raise self.retry(exc=exc)
         raise

@@ -102,7 +102,7 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=100000, ssl_require=True)
+    'default': dj_database_url.config(conn_max_age=1000, ssl_require=True)
 }
 
 # DATABASES = {

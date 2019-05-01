@@ -1,1 +1,1 @@
-# thrones
+# многознайко-server

@@ -16,7 +16,7 @@ from questions.serializers import QuestionSerializer
 from games.models import Game, Round, GameState
 from games.serializers import GameSerializer
 
-GAME_ROUNDS_COUNT = 10
+GAME_ROUNDS_COUNT = 5
 QUESTION_POINTS = 10
 
 class GameController(AsyncWebsocketConsumer):

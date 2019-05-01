@@ -102,14 +102,19 @@ conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 
 DATABASES = {
-    'default': dj_database_url.config(engine='django_postgrespool2')
+    'default': dj_database_url.config(conn_max_age=100000, ssl_require=True)
 }
 
-DATABASE_POOL_ARGS = {
-    'max_overflow': 5,
-    'pool_size': 5,
-    'recycle': 10
-}
+# DATABASES = {
+#     'default': dj_database_url.config(engine='django_postgrespool2')
+# }
+
+
+# DATABASE_POOL_ARGS = {
+#     'max_overflow': 5,
+#     'pool_size': 5,
+#     'recycle': 10
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

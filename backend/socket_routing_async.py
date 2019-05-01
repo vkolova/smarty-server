@@ -197,7 +197,7 @@ class GameController(AsyncWebsocketConsumer):
 
     async def new_round(self):
         game = await self.game
-         game.data['round'] = self.initialize_round_data()
+        game.data['round'] = self.initialize_round_data()
         await database_sync_to_async(game.save)()
 
         question = await self.get_question()

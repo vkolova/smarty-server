@@ -100,15 +100,18 @@ CHANNEL_LAYERS = {
 DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
+db_conf = dj_database_url.config(engine='dbpool.db.backends.postgresql_psycopg2')
+
 DATABASES = {
-    'default': dj_database_url.config(engine='django_postgrespool')
+    'default': {
+        **db_conf,
+        'OPTIONS': {
+            **db_conf['OPTIONS'],
+            'MAX_CONNS': 5
+        }
+    }
 }
 
-DATABASE_POOL_ARGS = {
-    'max_overflow': 10,
-    'pool_size': 5,
-    'recycle': 300
-}
 
 # Password validation
 # https://docs.djangoproject.com/en/2.1/ref/settings/#auth-password-validators

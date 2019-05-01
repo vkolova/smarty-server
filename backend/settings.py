@@ -101,12 +101,13 @@ DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
 db_conf = dj_database_url.config(engine='dbpool.db.backends.postgresql_psycopg2')
+print(db_conf)
 
 DATABASES = {
     'default': {
         **db_conf,
         'OPTIONS': {
-            **db_conf['OPTIONS'],
+            'sslmode': 'require',
             'MAX_CONNS': 5
         }
     }

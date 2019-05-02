@@ -31,7 +31,6 @@ class GameController(WebsocketConsumer):
             self.game_group,
             self.channel_name
         )
-
         self.accept()
         self.send_game_update()
     
@@ -109,6 +108,7 @@ class GameController(WebsocketConsumer):
 
     def start_game(self):
         game = self.game
+        print('start game')
         if game.state != 'in_progress':
             self.new_round()
         else:
@@ -125,6 +125,7 @@ class GameController(WebsocketConsumer):
 
         if data == 'ok':
             self.save_connected()
+            print(self.user.username, 'connected')
             players_are_connected = self.check_all_connected()
 
             if self.check_all_connected():
@@ -155,21 +156,19 @@ class GameController(WebsocketConsumer):
         }))
     
     def scores_update(self, event):
-        # self.send(text_data=json.dumps({
-        #     'type': 'scores_update',
-        #     'data': event['data']
-        # }))
-        pass
+        self.send(text_data=json.dumps({
+            'type': 'scores_update',
+            'data': event['data']
+        }))
 
     def send_score_update(self):
-        pass
-        # async_to_sync(self.channel_layer.group_send)(
-        #     self.game_group,
-        #     {
-        #         'type': 'scores_update',
-        #         'data': self.game.data['score']
-        #     }
-        # )
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group,
+            {
+                'type': 'scores_update',
+                'data': self.game.data['score']
+            }
+        )
    
     def send_question_update(self):
         current_round = self.get_current_round()
@@ -247,7 +246,6 @@ class GameController(WebsocketConsumer):
     def is_score_a_tie(self):
         game = self.game
         score_data = game.data['score']
-
         player_a = game.players.values()[0]['username']
         player_b = game.players.values()[1]['username']
 
@@ -304,7 +302,7 @@ class GameController(WebsocketConsumer):
             'answered': data
         }
         game.save()
-        
+
 
         if self.check_all_answered():
             self.select_round_winner()

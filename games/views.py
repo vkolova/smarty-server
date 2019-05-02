@@ -23,9 +23,16 @@ class GameView(mixins.CreateModelMixin,
     queryset = Game.objects.all()
     serializer_class = GameSerializer
 
+    def get_random_player(self):
+        players = Players.objects.exclude(pk=self.request.user.id)
+        count = players.count()
+        slice = random.random() * (count - 1)
+        player = players[slice: slice+1][0]
+        return player
+
     def perform_create(self, serializer):
         opponent = self.request.data.get('opponent', None)
-        ids = (self.request.user.id, opponent) if opponent else (self.request.user.id,)
+        ids = (self.request.user.id, opponent) if opponent else (self.request.user.id, self.get_random_player())
         
         creator = Player.objects.get(pk=self.request.user.id)
         opponent = Player.objects.get(pk=opponent)

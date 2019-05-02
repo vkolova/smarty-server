@@ -8,11 +8,8 @@ from .models import Game, Round
 class RoundSerializer(serializers.ModelSerializer):
     class Meta:
         model = Round
-        fields = ('id', 'player_a_time', 'player_b_time', 'winner', 'question')
+        fields = ('id', 'winner', 'question')
         write_once_fields = ('winner',)
-    
-        player_a_time = serializers.DateTimeField(required=False)
-        player_b_time = serializers.DateTimeField(required=False)
 
 
 class GameSerializer(serializers.ModelSerializer):

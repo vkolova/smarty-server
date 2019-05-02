@@ -43,13 +43,13 @@ class PlayerSerializer(serializers.ModelSerializer):
         return 1
     
     def get_games(self, obj):
-        return obj.games.count()
+        return obj.games.filter(state='finished').count()
 
     def get_wins(self, obj):
         return obj.games.filter(winner__id=obj.id).count()
 
     def get_streak(self, obj):
-        games = obj.games.all().filter(state='finished').order_by('-id')
+        games = obj.games.filter(state='finished').order_by('-id')
         streak = 0
         for g in games:
             if g.winner:

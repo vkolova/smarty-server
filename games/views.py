@@ -38,7 +38,10 @@ class GameView(mixins.CreateModelMixin,
             opponent = self.get_random_player()
 
         ids = (self.request.user.id, opponent.id)
+        
+        creator = Player.objects.get(pk=self.request.user.id)
         players = Player.objects.filter(pk__in=ids)
+
         serializer.save(players=players)
     
         send_push_message(PushMessage(

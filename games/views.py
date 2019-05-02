@@ -31,13 +31,14 @@ class GameView(mixins.CreateModelMixin,
         return player
 
     def perform_create(self, serializer):
-        opponent = self.request.data.get('opponent', None)
-        ids = (self.request.user.id, opponent) if opponent else (self.request.user.id, self.get_random_player())
-        
-        creator = Player.objects.get(pk=self.request.user.id)
-        opponent = Player.objects.get(pk=opponent)
-        players = Player.objects.filter(pk__in=ids)
+        opponentId = self.request.data.get('opponent', None)
+        if opponentId:
+            opponent = Player.objects.get(pk=opponentId)
+        else:
+            opponent = self.get_random_player()
 
+        ids = (self.request.user.id, opponent.id)
+        players = Player.objects.filter(pk__in=ids)
         serializer.save(players=players)
     
         send_push_message(PushMessage(

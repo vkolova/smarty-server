@@ -1,11 +1,11 @@
 from asgiref.sync import async_to_sync
-from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.generic.websocket import WebsocketConsumer
+from channels.routing import ProtocolTypeRouter, URLRouter
 from datetime import datetime
 
 from django.conf.urls import url
 from django.contrib.auth.models import User
-from django.db import connection
+from django.db import connection, close_old_connections
 
 from time import sleep
 import json
@@ -22,10 +22,11 @@ QUESTION_POINTS = 10
 
 class GameController(WebsocketConsumer):
     def connect(self):
+        close_old_connections()
         self.game_uuid = self.scope['url_route']['kwargs']['game_uuid']
         self.game_group = 'game_%s' % self.game_uuid
-        
-        self.user = self.get_user()
+        self.user = self.scope['user']
+        # self.user = self.get_user()
 
         async_to_sync(self.channel_layer.group_add)(
             self.game_group,
@@ -36,7 +37,10 @@ class GameController(WebsocketConsumer):
     
     @property
     def game(self):
-        return Game.objects.get(channel=self.game_uuid)
+        close_old_connections()
+        game = Game.objects.get(channel=self.game_uuid)
+        close_old_connections()
+        return game
     
     def initialize_game_data(self):
         data = {
@@ -64,6 +68,18 @@ class GameController(WebsocketConsumer):
             'data': 'Welcome, %s' % self.user.username
         }))
         
+    
+    def disconnect_player(self):
+        game = self.game
+        connected = game.data['connected']
+        connected.remove(self.user.username)
+        game.data = {
+            **game.data,
+            'connected': connected
+        }
+        game.save()
+        self.send_game_update()
+        close_old_connections()
 
     def initialize_round_data(self):
         player_data = {
@@ -78,12 +94,14 @@ class GameController(WebsocketConsumer):
         if len(game.data['connected']) == 0:
             return False
 
+        close_old_connections()
         for u in game.players.values():
             if u['username'] not in game.data['connected']:
                 return False
         return True
 
     def disconnect(self, close_code):
+        self.disconnect_player()
         async_to_sync(self.channel_layer.group_discard)(
             self.game_group,
             self.channel_name
@@ -94,6 +112,7 @@ class GameController(WebsocketConsumer):
         data = text_data_json['data']
         type = text_data_json['type']
 
+        close_old_connections()
         if type == 'game_connect':
             self.game_connect(text_data_json)
         if type == 'question_answer':
@@ -104,6 +123,7 @@ class GameController(WebsocketConsumer):
         data = {}
         for p in [u['username'] for u in game.players.values()]:
             data[p] = value
+        close_old_connections()
         return data
 
     def start_game(self):
@@ -118,6 +138,7 @@ class GameController(WebsocketConsumer):
         game.state = GameState.IN_PROGRESS
         game.save()
         self.send_game_update()
+        close_old_connections()
     
     def game_connect(self, event):
         game = self.game
@@ -134,10 +155,12 @@ class GameController(WebsocketConsumer):
             game.state = GameState.DECLINED
             game.finished = datetime.now()
             game.save()
+        close_old_connections()
         self.send_game_update()
     
     def get_current_round(self):
         current_round = self.game.rounds.order_by('-id')[0]
+        close_old_connections()
         return current_round
     
     def send_game_update(self):
@@ -169,6 +192,7 @@ class GameController(WebsocketConsumer):
                 'data': self.game.data['score']
             }
         )
+        close_old_connections()
    
     def send_question_update(self):
         current_round = self.get_current_round()
@@ -186,6 +210,7 @@ class GameController(WebsocketConsumer):
         return user
     
     def get_question(self):
+        close_old_connections()
         count = Question.objects.all().count()
         slice = random.random() * (count - 1)
         question = Question.objects.all()[slice: slice+1][0]
@@ -239,7 +264,10 @@ class GameController(WebsocketConsumer):
             self.game_group,
             {
                 'type': 'round_winner',
-                'data': current_round.winner.username if current_round.winner else None
+                'data': {
+                    'winner': current_round.winner.username if current_round.winner else None,
+                    'answers': self.game.data['round']
+                }
             }
         )
 
@@ -288,6 +316,7 @@ class GameController(WebsocketConsumer):
         self.new_round()
         self.send_score_update()
         self.send_game_update()
+        close_old_connections()
 
     def question_answer(self, event):
         data = event['data']
@@ -295,6 +324,7 @@ class GameController(WebsocketConsumer):
         user = self.user.username
         current_round = self.get_current_round()
 
+        close_old_connections()
         is_correct = data == current_round.question.correct_answer()
         game.data['round'][user] = {
             'timestamp': datetime.now().timestamp(),
@@ -308,10 +338,12 @@ class GameController(WebsocketConsumer):
             self.select_round_winner()
             self.send_round_winner()
 
+            close_old_connections()
             if self.check_game_end():
                 self.finish_game()
                 self.send_game_update()
             else:
+                sleep(5)
                 self.initialize_next_round()
     
     def question_update(self, event):
@@ -325,8 +357,22 @@ class GameController(WebsocketConsumer):
             'type': 'round_winner',
             'data': event['data']
         }))
-    
+
+
+class QueryAuthMiddleware:
+    def __init__(self, inner):
+        # Store the ASGI application we were passed
+        self.inner = inner
+
+    def __call__(self, scope):
+        # Close old database connections to prevent usage of timed out connections
+        close_old_connections()
+
+        token = scope['url_route']['kwargs']['user_token']
+        user = User.objects.get(auth_token=token)
+        return self.inner(dict(scope, user=user))
+
 
 websocket_urlpatterns = [
-    url(r'^ws/game/(?P<user_token>[^/]+)/(?P<game_uuid>[^/]+)/$', GameController),
+    url(r'^ws/game/(?P<user_token>[^/]+)/(?P<game_uuid>[^/]+)/$', QueryAuthMiddleware(GameController)),
 ]

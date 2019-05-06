@@ -24,7 +24,7 @@ class GameView(mixins.CreateModelMixin,
     serializer_class = GameSerializer
 
     def get_random_player(self):
-        players = Player.objects.exclude(pk=self.request.user.id)
+        players = Player.objects.exclude(pk=self.request.user.id).exclude(push_notification_token__isnull=True)
         count = players.count()
         slice = random.random() * (count - 1)
         player = players[slice: slice+1][0]

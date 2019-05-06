@@ -60,6 +60,6 @@ class Game(models.Model):
 
 class Round(models.Model):
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
-    question = models.ForeignKey(Question, default=None, on_delete=models.DO_NOTHING, blank=True, null=True)
+    question = models.ForeignKey(Question, default=None, on_delete=models.CASCADE, blank=True, null=True)
 
-    game = models.ForeignKey(Game, default=None, on_delete=models.DO_NOTHING, blank=True, null=True, related_name='rounds')
+    game = models.ForeignKey(Game, default=None, on_delete=models.CASCADE, blank=True, null=True, related_name='rounds')

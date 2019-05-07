@@ -26,13 +26,20 @@ class GameController(WebsocketConsumer):
         self.game_uuid = self.scope['url_route']['kwargs']['game_uuid']
         self.game_group = 'game_%s' % self.game_uuid
         self.user = self.scope['user']
-        # self.user = self.get_user()
 
+        self.accept()
         async_to_sync(self.channel_layer.group_add)(
             self.game_group,
             self.channel_name
         )
-        self.accept()
+
+        async_to_sync(self.channel_layer.group_send)(
+            self.game_group,
+            {
+                'type': 'notification',
+                'data': self.user.username
+            }
+        )
         self.send_game_update()
     
     @property
@@ -70,16 +77,18 @@ class GameController(WebsocketConsumer):
         
     
     def disconnect_player(self):
-        game = self.game
-        connected = game.data['connected']
-        connected.remove(self.user.username)
-        game.data = {
-            **game.data,
-            'connected': connected
-        }
-        game.save()
-        self.send_game_update()
-        close_old_connections()
+        # game = self.game
+        # connected = game.data['connected']
+        # if self.user.username in connected:
+        #     connected.remove(self.user.username)
+        # game.data = {
+        #     **game.data,
+        #     'connected': connected
+        # }
+        # game.save()
+        # self.send_game_update()
+        # close_old_connections()
+        pass
 
     def initialize_round_data(self):
         player_data = {
@@ -101,7 +110,7 @@ class GameController(WebsocketConsumer):
         return True
 
     def disconnect(self, close_code):
-        self.disconnect_player()
+        # self.disconnect_player()
         async_to_sync(self.channel_layer.group_discard)(
             self.game_group,
             self.channel_name
@@ -133,19 +142,20 @@ class GameController(WebsocketConsumer):
             game.state = 'in_progress'
             game.save()
             close_old_connections()
-            sleep(1)
+            sleep(0.5)
             self.send_game_update()
-            sleep(1)
             self.new_round()
         else:
             self.send_question_update()
 
+        self.send_game_update()
         self.send_score_update()
         close_old_connections()
     
     def game_connect(self, event):
         game = self.game
         data = event['data']
+        print(self.user.username, data)
 
         if data == 'ok':
             self.save_connected()
@@ -175,18 +185,6 @@ class GameController(WebsocketConsumer):
             }
         )
     
-    def game_update(self, event):
-        self.send(text_data=json.dumps({
-            'type': 'game_update',
-            'data': event['data']
-        }))
-    
-    def scores_update(self, event):
-        self.send(text_data=json.dumps({
-            'type': 'scores_update',
-            'data': event['data']
-        }))
-
     def send_score_update(self):
         async_to_sync(self.channel_layer.group_send)(
             self.game_group,
@@ -337,7 +335,6 @@ class GameController(WebsocketConsumer):
         }
         game.save()
 
-
         if self.check_all_answered():
             self.select_round_winner()
             self.send_round_winner()
@@ -347,7 +344,7 @@ class GameController(WebsocketConsumer):
                 self.finish_game()
                 self.send_game_update()
             else:
-                sleep(5)
+                sleep(3)
                 self.initialize_next_round()
     
     def question_update(self, event):
@@ -355,12 +352,35 @@ class GameController(WebsocketConsumer):
             'type': 'question_update',
             'data': event['data']
         }))
+        pass
 
     def round_winner(self, event):
         self.send(text_data=json.dumps({
             'type': 'round_winner',
             'data': event['data']
         }))
+        pass
+    
+    def notification(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'notification',
+            'data': event['data']
+        }))
+        pass
+    
+    def game_update(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'game_update',
+            'data': event['data']
+        }))
+        pass
+    
+    def scores_update(self, event):
+        self.send(text_data=json.dumps({
+            'type': 'scores_update',
+            'data': event['data']
+        }))
+        pass
 
 
 class QueryAuthMiddleware:

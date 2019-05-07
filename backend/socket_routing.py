@@ -129,15 +129,15 @@ class GameController(WebsocketConsumer):
     def start_game(self):
         game = self.game
         print('start game')
-        if game.state != 'in_progress':
+        if game.state != 'in_progress' and game.state != 'finished':
+            game.state = GameState.IN_PROGRESS
+            game.save()
+            self.send_game_update()
             self.new_round()
         else:
             self.send_question_update()
 
         self.send_score_update()
-        game.state = GameState.IN_PROGRESS
-        game.save()
-        self.send_game_update()
         close_old_connections()
     
     def game_connect(self, event):

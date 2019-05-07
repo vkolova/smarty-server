@@ -133,7 +133,7 @@ class GameController(WebsocketConsumer):
             game.state = 'in_progress'
             game.save()
             close_old_connections()
-            sleed(1)
+            sleep(1)
             self.send_game_update()
             sleep(1)
             self.new_round()

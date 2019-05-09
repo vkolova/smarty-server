@@ -74,14 +74,7 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = 'backend.wsgi.application'
 ASGI_APPLICATION = 'routing.application'
-
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels.layers.InMemoryChannelLayer'
-#     }
-# }
 
 CHANNEL_LAYERS = {
     'default': {
@@ -100,9 +93,8 @@ CHANNEL_LAYERS = {
 DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
 
-
 DATABASES = {
-    'default': dj_database_url.config(conn_max_age=0, ssl_require=True)
+    'default': dj_database_url.config()
 }
 
 # Password validation

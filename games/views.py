@@ -52,7 +52,7 @@ class GameView(mixins.CreateModelMixin,
             channel_id='game_invite',
             data={
                 'invited_by': SimplePlayerSerializer().to_representation(creator),
-                'channel': serializer.instance.channel.hex
+                'channel': serializer.data['channel']
             }
         ))
     

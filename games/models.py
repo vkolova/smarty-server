@@ -54,12 +54,17 @@ class Game(models.Model):
     state = models.CharField(max_length=15, default=INITIAL, choices=GAME_STATES)
     created = models.DateTimeField(default=datetime.now, blank=False)
     finished = models.DateTimeField(default=None, blank=True, null=True)
+
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
     data = JSONField(default=None, null=True, blank=True)
 
 
 class Round(models.Model):
+    player_a = JSONField(default=None, null=True, blank=True)
+    player_b = JSONField(default=None, null=True, blank=True)
+
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
     question = models.ForeignKey(Question, default=None, on_delete=models.CASCADE, blank=True, null=True)
+    finished = models.BooleanField(default=False)
 
     game = models.ForeignKey(Game, default=None, on_delete=models.CASCADE, blank=True, null=True, related_name='rounds')

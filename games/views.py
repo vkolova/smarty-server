@@ -29,9 +29,15 @@ class GameView(mixins.CreateModelMixin,
         slice = random.random() * (count - 1)
         player = players[slice: slice+1][0]
         return player
+    
 
     def perform_create(self, serializer):
+        opponentUsername = self.request.data.get('username', None)
         opponentId = self.request.data.get('opponent', None)
+
+        if opponentUsername:
+            opponentId = Player.objects.get(username=opponentUsername)
+
         if opponentId:
             opponent = Player.objects.get(pk=opponentId)
         else:

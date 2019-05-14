@@ -26,8 +26,8 @@ class SimplePlayerSerializer(serializers.ModelSerializer):
 class PlayerSerializer(serializers.ModelSerializer):
     class Meta(object):
         model = Player
-        fields = ('id', 'user', 'score', 'avatar', 'level', 'games', 'wins', 'streak', 'push_notification_token')
-        read_only_fields = ('level', 'games', 'wins', 'streak',)
+        fields = ('id', 'user', 'score', 'avatar', 'level', 'games', 'wins', 'streak', 'push_notification_token', 'rang_position')
+        read_only_fields = ('level', 'games', 'wins', 'streak', 'rang_position',)
         write_once_fields = ('user',)
     
     user = UserSerializer()
@@ -38,9 +38,11 @@ class PlayerSerializer(serializers.ModelSerializer):
     games = serializers.SerializerMethodField()
     wins = serializers.SerializerMethodField()
     streak = serializers.SerializerMethodField()
+    rang_position = serializers.SerializerMethodField()
 
     def get_level(self, obj):
-        return 1
+        level = obj.score / 100
+        return int(level) if level > 0 else 1
     
     def get_games(self, obj):
         return obj.games.filter(state='finished').count()
@@ -58,3 +60,7 @@ class PlayerSerializer(serializers.ModelSerializer):
                 else:
                     return streak
         return streak
+    
+    def get_rang_position(self, obj):
+        queryset = Player.objects.all().order_by('-score')
+        return list(queryset.values_list('pk', flat=True)).index(obj.pk) + 1

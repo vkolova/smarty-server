@@ -28,5 +28,9 @@ class PlayersList(viewsets.ViewSet):
 
     def list(self, request):
         queryset = Player.objects.all().order_by('-score')
-        serializer = PlayerSerializer(queryset, many=True)
-        return Response(serializer.data)
+        serializer = PlayerSerializer(queryset[0:3], many=True)
+
+        return Response({
+            'players': serializer.data,
+            'you': list(queryset.values_list('pk', flat=True)).index(request.user.pk)
+        })

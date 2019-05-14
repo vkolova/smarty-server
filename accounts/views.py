@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from accounts.serializers import CreateUserSerializer
+from players.serializers import PlayerSerializer
+from players.models import Player
 
 
 class CreateUserAPIView(CreateAPIView):
@@ -25,8 +27,9 @@ class CreateUserAPIView(CreateAPIView):
         token = Token.objects.create(user=serializer.instance)
         token_data = {"token": token.key}
 
+        player = Player.objects.get(pk=serializer.instance.id)
         return Response(
-            {**serializer.data, **token_data},
+            {'user': PlayerSerializer().to_representation(player), **token_data},
             status=status.HTTP_201_CREATED,
             headers=headers
         )
@@ -41,7 +44,9 @@ class LoginUserAPIView(ObtainAuthToken):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
-        return Response({ 'token': token.key, 'id': user.id, 'username': user.username })
+
+        player = Player.objects.get(pk=user.id)
+        return Response({ 'token': token.key, 'user': PlayerSerializer().to_representation(player) })
 
 
 class LogoutUserAPIView(APIView):

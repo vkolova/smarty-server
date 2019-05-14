@@ -231,10 +231,11 @@ class GameConsumer(WebsocketConsumer):
     
 
     def save_round_answer(self, data):
-        with transaction.atomic():
-            game = Game.objects.select_for_update().get(channel=self.room_name)
-            current_round = game.rounds.order_by('-id').first()
-            
+        # current_round = self.get_current_round()
+        game = Game.objects.get(channel=self.room_name)
+        current_round = game.rounds.select_for_update().order_by('-id').first()
+
+        with transaction.atomic():  
             if current_round.player_a['username'] == self.user.username:
                 current_round.player_a = {
                     **current_round.player_a,
@@ -273,7 +274,6 @@ class GameConsumer(WebsocketConsumer):
             winner = None
 
         if winner:
-            game = self.game
             game.data['score'][winner] = game.data['score'][winner] + QUESTION_POINTS
             game.save()
             current_round.winner = Player.objects.get(username=winner)

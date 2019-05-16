@@ -42,7 +42,7 @@ class PlayerSerializer(serializers.ModelSerializer):
 
     def get_level(self, obj):
         level = obj.score / 100
-        return int(level) if level > 0 else 1
+        return int(level) + 1
     
     def get_games(self, obj):
         return obj.games.filter(state='finished').count()

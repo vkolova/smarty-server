@@ -71,7 +71,6 @@ class GameConsumer(WebsocketConsumer):
         self.room_group_name = 'chat_%s' % self.room_name
         self.user = self.scope['user']
 
-        print("room-name", self.room_name, self.user.username)
         if self.user:
             self.accept()
             # Join room group
@@ -94,7 +93,6 @@ class GameConsumer(WebsocketConsumer):
         text_data_json = json.loads(text_data)
         data = text_data_json['data']
         type = text_data_json['type']
-        print(self.user.username, 'received', type, data)
     
         if type == 'game_connect':
             self.game_connect(text_data_json)
@@ -191,9 +189,7 @@ class GameConsumer(WebsocketConsumer):
 
         rounds_count = len(game.rounds.all())
         is_a_tie = self.is_score_a_tie()
-        return False \
-            if rounds_count == GAME_ROUNDS_COUNT and is_a_tie \
-            else rounds_count == GAME_ROUNDS_COUNT
+        return rounds_count >= GAME_ROUNDS_COUNT and not is_a_tie
 
     def finish_game(self):
         game = self.game

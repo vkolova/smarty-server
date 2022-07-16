@@ -1,11 +1,10 @@
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
-from channels.routing import ProtocolTypeRouter, URLRouter
 from datetime import datetime
 
 from django.conf.urls import url
 from django.contrib.auth.models import User
-from django.db import connection, close_old_connections, transaction
+from django.db import transaction
 
 from time import sleep
 import json
@@ -30,9 +29,6 @@ class QueryAuthMiddleware:
         token = scope['url_route']['kwargs']['user_token']
         user = User.objects.get(auth_token=token)
 
-        # Close old database connections to prevent usage of timed out connections
-        close_old_connections()
-
         return self.inner(dict(scope, user=user))
 
 
@@ -40,14 +36,14 @@ class GameConsumer(WebsocketConsumer):
     @property
     def game(self):
         game = Game.objects.get(channel=self.room_name)
-        close_old_connections()
         return game
     
     def players_obj(self, value):
         game = self.game
         data = {}
-        for p in [u['username'] for u in game.players.values()]:
-            data[p] = value
+        for p in game.players.values():
+            user = User.objects.get(pk=p['id'])
+            data[user] = value
         return data
     
     def initialize_game_data(self):
@@ -115,6 +111,7 @@ class GameConsumer(WebsocketConsumer):
         self.send_score_update()
 
     def save_connected(self):
+        self.game.refresh_from_db()
         game = self.game
 
         if not game.data:
@@ -333,7 +330,6 @@ class GameConsumer(WebsocketConsumer):
     
     def send_round_winner(self):
         print('will send_round_winner', self.user.username)
-        game = self.game
         current_round = self.get_current_round()
         player_a = current_round.player_a
         player_b = current_round.player_b
@@ -382,6 +378,46 @@ class GameConsumer(WebsocketConsumer):
     def connected(self, evet):
         print('connected event')
 
+
+from django.core.cache import cache
+
+class InvitationConsumer(WebsocketConsumer):
+    def connect(self):
+        cache.set('INVITATIONS_CHANNEL', self.channel_name, timeout=None)
+        self.group_name = 'online_users'
+        self.user = self.scope['user']
+
+        print(self.user, 'is now online')
+
+        if self.user:
+            self.accept()
+            async_to_sync(self.channel_layer.group_add)(
+                self.group_name,
+                self.channel_name
+            )
+        else:
+            self.close()
+
+    def receive(self, text_data=None, bytes_data=None):
+        pass
+
+    def game_invitation(self, event):
+        data = event['data']
+        print(data['invited_by']['username'], 'invited', data['invited'], 'to play at', data['channel'])
+        self.send(text_data=json.dumps({
+            'type': 'game_invitation',
+            'data': data
+        }))
+
+    def disconnect(self, close_code):
+        async_to_sync(self.channel_layer.group_discard)(
+            self.group_name,
+            self.channel_name
+        )
+
+
+
 websocket_urlpatterns = [
     url(r'^ws/game/(?P<user_token>[^/]+)/(?P<room_name>[^/]+)/$', QueryAuthMiddleware(GameConsumer)),
+    url(r'^ws/invitations/(?P<user_token>[^/]+)/$', QueryAuthMiddleware(InvitationConsumer)),
 ]

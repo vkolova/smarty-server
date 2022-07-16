@@ -1,4 +1,6 @@
 from django.shortcuts import render
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
 from rest_framework import serializers, mixins, permissions, viewsets, status, generics
 from rest_framework.response import Response
 from exponent_server_sdk import PushMessage
@@ -11,6 +13,8 @@ from questions.models import Question
 
 from .models import Game
 from .serializers import GameSerializer
+
+from django.core.cache import cache
 
 
 class GameView(mixins.CreateModelMixin,
@@ -33,32 +37,26 @@ class GameView(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         opponentUsername = self.request.data.get('username', None)
-        opponentId = self.request.data.get('opponent', None)
 
         if opponentUsername:
-            opponentId = Player.objects.get(username=opponentUsername)
-
-        if opponentId:
-            opponent = Player.objects.get(pk=opponentId)
+            opponent = Player.objects.get(user__username=opponentUsername)
         else:
             opponent = self.get_random_player()
 
-        ids = (self.request.user.id, opponent.id)
-        
         creator = Player.objects.get(pk=self.request.user.id)
-        players = Player.objects.filter(pk__in=ids)
+        players = Player.objects.filter(pk__in=(self.request.user.id, opponent.id))
 
         serializer.save(players=players)
-    
-        send_push_message(PushMessage(
-            to=opponent.push_notification_token,
-            title='Покана за игра',
-            body='Поканиха Ви за игра',
-            priority='high',
-            channel_id='game_invite',
-            data={
-                'invited_by': SimplePlayerSerializer().to_representation(creator),
-                'channel': serializer.data['channel']
+
+        channel_layer = get_channel_layer()
+        async_to_sync(channel_layer.group_send)(
+            'online_users',
+            {
+                'type': 'game_invitation',
+                'data': {
+                    'invited': opponent.user.username,
+                    'invited_by': SimplePlayerSerializer().to_representation(creator),
+                    'channel': serializer.data['channel']
+                }
             }
-        ))
-    
+        )

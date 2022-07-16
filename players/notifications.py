@@ -16,7 +16,5 @@ def send_push_message(message):
         response.validate_response()
     except DeviceNotRegisteredError:
         pass
-        # from notifications.models import PushToken
-        # PushToken.objects.filter(token=token).update(active=False)
     except PushResponseError as exc:
         raise

@@ -2,3 +2,5 @@ venv
 db.*
 *.pyc
 .vscode
+
+node_modules/

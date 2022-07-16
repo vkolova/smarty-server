@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<body>
+    <script>
+        // const socketURL = `ws://localhost:8001/ws/invitations/10200a9107a7fa87ae30eae506c6c728764f3b2f/`;
+        
+        const socketURL = `ws://localhost:8001/ws/game/10200a9107a7fa87ae30eae506c6c728764f3b2f/12313be9-1a14-4614-866f-6869f4c0859b/`;
+        const ws = new WebSocket(socketURL)
+
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ type: 'game_connect', data: 'ok' }))
+            console.log('connected')
+        }
+
+        ws.onmessage = e => {
+            const { type, data } = JSON.parse(e.data);
+            console.log(type, data)
+        }
+
+        ws.onerror = (e) => {
+            console.log(e)
+        }
+
+        ws.onclose = (e) => {
+            console.log('CLOSED')
+        }
+    </script>
+</body>
+</html>

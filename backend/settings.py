@@ -40,10 +40,10 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'django_extensions',
 
-    'questions',
     'channels',
+    'questions',
     'players',
-    'games',
+    'games'
 ]
 
 MIDDLEWARE = [
@@ -91,9 +91,13 @@ CHANNEL_LAYERS = {
 # https://docs.djangoproject.com/en/2.1/ref/settings/#databases
 
 DATABASES = {
-    "default": {
-        "ENGINE":   "django.db.backends.sqlite3",
-        "NAME":     "smarty_server.db.sqlite3"
+    'default': {
+        'ENGINE': 'django.db.backends.mysql', 
+        'NAME': 'smarty',
+        'USER': 'smarty',
+        'PASSWORD': 'smarty',
+        'HOST': 'mysql',   # Or an IP Address that your DB is hosted on
+        'PORT': '3306',
     }
 }
 

@@ -1,13 +1,13 @@
 from django.contrib import admin
-from django.conf.urls import include, url
+from django.urls import include, re_path
 
 api_patterns = [
-    url(r'^accounts/', include('accounts.urls')),
-    url(r'^', include('players.urls')),
-    url(r'^', include('games.urls')),
+    re_path(r'^accounts/', include('accounts.urls')),
+    re_path(r'^', include('players.urls')),
+    re_path(r'^', include('games.urls')),
 ]
 
 urlpatterns = [
-    url(r'^admin/', admin.site.urls),
-    url(r'^api/', include(api_patterns)),
+    re_path(r'^admin/', admin.site.urls),
+    re_path(r'^api/', include(api_patterns)),
 ]

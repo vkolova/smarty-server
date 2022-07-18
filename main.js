@@ -8,7 +8,7 @@ const axios = require('axios');
     axios.defaults.headers.common.Authorization = 'Token 10200a9107a7fa87ae30eae506c6c728764f3b2f';
 
     try {
-        const resp = await axios.post(`${SERVER}/api/games/`, {username: "vkolova"})
+        const resp = await axios.post(`${SERVER}/api/accounts/register/`, {username: "vkolova"})
         console.log(resp.data)
 
     } catch (error) {

@@ -2,7 +2,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 from datetime import datetime
 
-from django.conf.urls import url
+from django.urls import include, re_path
 from django.contrib.auth.models import User
 from django.db import transaction
 
@@ -418,6 +418,6 @@ class InvitationConsumer(WebsocketConsumer):
 
 
 websocket_urlpatterns = [
-    url(r'^ws/game/(?P<user_token>[^/]+)/(?P<room_name>[^/]+)/$', QueryAuthMiddleware(GameConsumer)),
-    url(r'^ws/invitations/(?P<user_token>[^/]+)/$', QueryAuthMiddleware(InvitationConsumer)),
+    re_path(r'^ws/game/(?P<user_token>[^/]+)/(?P<room_name>[^/]+)/$', QueryAuthMiddleware(GameConsumer)),
+    re_path(r'^ws/invitations/(?P<user_token>[^/]+)/$', QueryAuthMiddleware(InvitationConsumer)),
 ]

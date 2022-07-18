@@ -1,4 +1,3 @@
-from django.contrib.postgres.fields import JSONField
 from django.db import models
 from enum import Enum
 import uuid
@@ -56,12 +55,12 @@ class Game(models.Model):
     finished = models.DateTimeField(default=None, blank=True, null=True)
 
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
-    data = JSONField(default=None, null=True, blank=True)
+    data = models.JSONField(default=None, null=True, blank=True)
 
 
 class Round(models.Model):
-    player_a = JSONField(default=None, null=True, blank=True)
-    player_b = JSONField(default=None, null=True, blank=True)
+    player_a = models.JSONField(default=None, null=True, blank=True)
+    player_b = models.JSONField(default=None, null=True, blank=True)
 
     winner = models.ForeignKey(Player, on_delete=models.CASCADE, default=None, null=True, blank=True)
     question = models.ForeignKey(Question, default=None, on_delete=models.CASCADE, blank=True, null=True)

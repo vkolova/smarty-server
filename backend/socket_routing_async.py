@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import include, re_path
 from channels.consumer import SyncConsumer
 from channels.generic.websocket import WebsocketConsumer
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -333,5 +333,5 @@ class GameController(AsyncWebsocketConsumer):
 
 
 websocket_urlpatterns = [
-    url(r'^ws/game/(?P<user_token>[^/]+)/(?P<game_uuid>[^/]+)/$', GameController),
+    re_path(r'^ws/game/(?P<user_token>[^/]+)/(?P<game_uuid>[^/]+)/$', GameController),
 ]

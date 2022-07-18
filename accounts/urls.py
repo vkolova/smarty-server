@@ -1,4 +1,4 @@
-from django.conf.urls import url
+from django.urls import include, re_path
 
 from .views import (
     CreateUserAPIView,
@@ -7,13 +7,13 @@ from .views import (
 )
 
 urlpatterns = [
-    url(r'^login/$',
+    re_path(r'^login/$',
         LoginUserAPIView.as_view(),
         name='auth_user_login'),
-    url(r'^register/$',
+    re_path(r'^register/$',
         CreateUserAPIView.as_view(),
         name='auth_user_create'),
-    url(r'^logout/$',
+    re_path(r'^logout/$',
         LogoutUserAPIView.as_view(),
         name='auth_user_logout')
 ]

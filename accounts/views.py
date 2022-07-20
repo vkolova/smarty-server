@@ -45,7 +45,7 @@ class LoginUserAPIView(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
 
-        player = Player.objects.get(pk=user.id)
+        player = Player.objects.get(user=user)
         return Response({ 'token': token.key, 'user': PlayerSerializer().to_representation(player) })
 
 

@@ -28,10 +28,3 @@ class Player(models.Model):
         null=True,
         default=None
     )
-
-
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def create_player_profile(sender, instance, created, **kwargs):
-    if created:
-        player_profile = Player.objects.create(user=instance, avatar='http://prikachi.com/images/569/9566569j.png')
-        player_profile.save()

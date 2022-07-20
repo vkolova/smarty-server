@@ -27,7 +27,7 @@ class CreateUserAPIView(CreateAPIView):
         token = Token.objects.create(user=serializer.instance)
         token_data = {"token": token.key}
 
-        player = Player.objects.get(pk=serializer.instance.id)
+        player, created = Player.objects.get_or_create(user=serializer.instance, avatar="https://s3.r29static.com/bin/entry/aa6/0,200,2000,2000/x,80/1527036/image.jpg")
         return Response(
             {'user': PlayerSerializer().to_representation(player), **token_data},
             status=status.HTTP_201_CREATED,

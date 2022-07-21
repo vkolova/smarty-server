@@ -1,15 +1,13 @@
 from django.shortcuts import render
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
-from rest_framework import serializers, mixins, permissions, viewsets, status, generics
-from rest_framework.response import Response
-from exponent_server_sdk import PushMessage
+from rest_framework import mixins, viewsets
+
+
 import random
 
 from players.models import Player
-from players.serializers import PlayerSerializer, SimplePlayerSerializer
-from players.notifications import send_push_message
-from questions.models import Question
+from players.serializers import  SimplePlayerSerializer
 
 from .models import Game
 from .serializers import GameSerializer

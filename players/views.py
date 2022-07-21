@@ -34,3 +34,13 @@ class PlayersList(viewsets.ViewSet):
             'players': serializer.data,
             'you': list(queryset.values_list('pk', flat=True)).index(request.user.pk)
         })
+
+class MyProfile(viewsets.ViewSet):
+    queryset = Player.objects.all()
+    serializer_class = Player
+
+    def list(self, request):
+        me = Player.objects.get(user=request.user)
+        serializer = PlayerSerializer(me)
+
+        return Response(serializer.data)

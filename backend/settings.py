@@ -1,7 +1,6 @@
 import os
 import psycopg2
 import dj_database_url
-import django_heroku
 import sentry_sdk
 
 is_prod = os.environ.get('IS_HEROKU', False)
@@ -85,7 +84,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
+            "hosts": [('192.168.182.94', 6379)],
         },
     },
 }
@@ -101,7 +100,7 @@ DATABASES = {
         'NAME': 'smarty',
         'USER': 'smarty',
         'PASSWORD': 'smarty',
-        'HOST': 'mysql',   # Or an IP Address that your DB is hosted on
+        'HOST': '192.168.182.94',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }
@@ -152,6 +151,3 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     )
 }
-
-# Activate Django-Heroku.
-django_heroku.settings(locals())

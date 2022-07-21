@@ -84,7 +84,7 @@ CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
         'CONFIG': {
-            "hosts": [('192.168.182.94', 6379)],
+            "hosts": [('127.0.0.1', 6379)],
         },
     },
 }
@@ -100,7 +100,7 @@ DATABASES = {
         'NAME': 'smarty',
         'USER': 'smarty',
         'PASSWORD': 'smarty',
-        'HOST': '192.168.182.94',   # Or an IP Address that your DB is hosted on
+        'HOST': 'mysql',   # Or an IP Address that your DB is hosted on
         'PORT': '3306',
     }
 }

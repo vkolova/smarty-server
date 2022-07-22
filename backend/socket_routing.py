@@ -1,9 +1,11 @@
-from asgiref.sync import async_to_sync
+from asgiref.sync import async_to_sync, sync_to_async
 from channels.generic.websocket import WebsocketConsumer
+from channels.db import database_sync_to_async
 from datetime import datetime
 
 from django.urls import include, re_path
 from django.contrib.auth.models import User
+from rest_framework.authtoken.models import Token
 from django.db import transaction
 
 from time import sleep
@@ -19,15 +21,21 @@ from questions.serializers import QuestionSerializer
 GAME_ROUNDS_COUNT = 5
 QUESTION_POINTS = 10
 
+@database_sync_to_async
+def get_user(token):
+    try:
+        token = Token.objects.get(key=token)
+        return token.user
+    except User.DoesNotExist:
+        return AnonymousUser()
+
 class QueryAuthMiddleware:
     def __init__(self, inner):
-        # Store the ASGI application we were passed
         self.inner = inner
 
-    def __call__(self, scope):
-
+    async def __call__(self, scope, *args, **kwargs):
         token = scope['url_route']['kwargs']['user_token']
-        user = User.objects.get(auth_token=token)
+        user = await get_user(token)
 
         return self.inner(dict(scope, user=user))
 
@@ -390,7 +398,6 @@ class InvitationConsumer(WebsocketConsumer):
         print(self.user, 'is now online')
 
         if self.user:
-            self.accept()
             async_to_sync(self.channel_layer.group_add)(
                 self.group_name,
                 self.channel_name

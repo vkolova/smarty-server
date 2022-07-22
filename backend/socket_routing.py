@@ -33,11 +33,10 @@ class QueryAuthMiddleware:
     def __init__(self, inner):
         self.inner = inner
 
-    async def __call__(self, scope, *args, **kwargs):
+    async def __call__(self, scope, receive, send):
         token = scope['url_route']['kwargs']['user_token']
-        user = await get_user(token)
-
-        return self.inner(dict(scope, user=user))
+        scope['user'] = await get_user(token)
+        return await self.inner(scope, receive, send)
 
 
 class GameConsumer(WebsocketConsumer):
@@ -425,6 +424,6 @@ class InvitationConsumer(WebsocketConsumer):
 
 
 websocket_urlpatterns = [
-    re_path(r'^ws/game/(?P<user_token>[^/]+)/(?P<room_name>[^/]+)/$', QueryAuthMiddleware(GameConsumer)),
-    re_path(r'^ws/invitations/(?P<user_token>[^/]+)/$', QueryAuthMiddleware(InvitationConsumer)),
+    re_path(r'^ws/game/(?P<user_token>[^/]+)/(?P<room_name>[^/]+)/$', QueryAuthMiddleware(GameConsumer.as_asgi())),
+    re_path(r'^ws/invitations/(?P<user_token>[^/]+)/$', QueryAuthMiddleware(InvitationConsumer.as_asgi())),
 ]

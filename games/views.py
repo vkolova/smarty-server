@@ -2,7 +2,7 @@ from django.shortcuts import render
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
 from rest_framework import mixins, viewsets
-
+from rest_framework.exceptions import APIException
 
 import random
 
@@ -14,6 +14,11 @@ from .serializers import GameSerializer
 
 from django.core.cache import cache
 
+class NoPlayerSpecified(APIException):
+    status_code = 400
+    default_detail = 'No player specified.'
+    default_code = 'bad_request'
+
 
 class GameView(mixins.CreateModelMixin,
             mixins.RetrieveModelMixin,
@@ -23,15 +28,7 @@ class GameView(mixins.CreateModelMixin,
             viewsets.GenericViewSet):
     
     queryset = Game.objects.all()
-    serializer_class = GameSerializer
-
-    def get_random_player(self):
-        players = Player.objects.exclude(user=self.request.user).exclude(push_notification_token__isnull=True)
-        count = players.count()
-        slice = random.random() * (count - 1)
-        player = players[slice: slice+1][0]
-        return player
-    
+    serializer_class = GameSerializer    
 
     def perform_create(self, serializer):
         opponentUsername = self.request.data.get('username', None)
@@ -39,8 +36,8 @@ class GameView(mixins.CreateModelMixin,
         if opponentUsername:
             opponent = Player.objects.get(user__username=opponentUsername)
         else:
-            opponent = self.get_random_player()
-
+            raise NoPlayerSpecified
+    
         creator = Player.objects.get(user=self.request.user)
         players = Player.objects.filter(user__in=(self.request.user, opponent))
 

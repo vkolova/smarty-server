@@ -1,7 +1,10 @@
+## Аутентикация
+
+
 ### POST /api/accounts/register/
 Приема
 
-```
+```javascript
 {
     username: "vkolova",
     password: "..."
@@ -9,7 +12,7 @@
 ```
 
 връща
-```json
+```javascript
 {
   user: {
     id: 1,
@@ -29,7 +32,7 @@
 ### POST /api/accounts/login/
 Приема
 
-```
+```javascript
 {
     username: "vkolova",
     password: "..."
@@ -37,7 +40,7 @@
 ```
 
 връща
-```json
+```javascript
 {
   user: {
     id: 1,
@@ -55,16 +58,23 @@
 ```
 
 ### GET /api/accounts/logout/
-Не приема или връща нищо.
+Не приема или връща нищо. (Authorization token се подава!)
 
-### /api/games/
-data: ```json
+
+## Игри и играчи
+
+### POST /api/games/
+Създава игра и праща покана за игра на друг играч (задължително!).
+data:
+```javascript
 { username: "nsekulov" }
 ```
-response: ```
+
+response:
+```javascript
 {
   id: 2,
-  channel: '1b92849f-4fd3-44b1-94a0-f51ee4026fcd',
+  channel: '1b92849f-4fd3-44b1-94a0-f51ee4026fcd', // ID на играта!
   players: [
     {
       id: 1,
@@ -80,19 +90,47 @@ response: ```
   data: null
 }
 ```
-/api/games/<id>/
-params:
-response:
-/api/player/<id>/
-params:
-response:
-/api/players/
-params:
-response:
+
+
+### GET /api/games/<id>/
+Връща информация за дадената игра.
+
+### GET /api/players/me/
+Връща информация за текущия играч.
+
+
+### GET /api/player/<id>/
+Връща информация за играч с `id`.
+
+### GET  /api/players/
+Връща топ 10 играчи, базирано на натрупани точки.
 
 
 
+## Web socket-и
 
-Socket:
+### За идващи покиани:
+`ws://localhost:8001/ws/invitations/${user.token}/`;
+
+### По време на игра:
 `ws://localhost:8001/ws/game/${user.token}/${game.uuid}/`;
 
+
+```
+> `game_connect` - съобщавате, че сте готови играта да започне
+
+
+> `game_update` - получавате ъпдейт за състоянието на играта; 
+> `scores_update` - получавате ъпдейт на точките
+> `round_winner` - съобщава победителя в рунда
+> `question_update` - получавате нов въпрос
+
+> `question_answer` - изпращате отговор
+{
+    type: 'question_answer',
+    data: {
+        'answer': <answer_id>,
+        'time': <remaining_time_in_seconds>
+    }
+}
+```

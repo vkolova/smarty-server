@@ -37,9 +37,9 @@ class GameView(mixins.CreateModelMixin,
             opponent = Player.objects.get(user__username=opponentUsername)
         else:
             raise NoPlayerSpecified
-    
+
         creator = Player.objects.get(user=self.request.user)
-        players = Player.objects.filter(user__in=(self.request.user, opponent))
+        players = Player.objects.filter(user__in=(self.request.user, opponent.user))
 
         serializer.save(players=players)
 

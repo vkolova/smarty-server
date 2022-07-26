@@ -48,9 +48,9 @@ class GameConsumer(WebsocketConsumer):
     def players_obj(self, value):
         game = self.game
         data = {}
-        for p in game.players.values():
-            user = User.objects.get(pk=p['id'])
-            data[user] = value
+        for id in game.players.values_list('user__id', flat=True):
+            user = User.objects.get(pk=id)
+            data[user.username] = value
         return data
     
     def initialize_game_data(self):
@@ -73,7 +73,7 @@ class GameConsumer(WebsocketConsumer):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
         self.room_group_name = 'chat_%s' % self.room_name
         self.user = self.scope['user']
-
+        
         if self.user:
             self.accept()
             # Join room group
@@ -142,8 +142,8 @@ class GameConsumer(WebsocketConsumer):
         if len(game.data['connected']) == 0:
             return False
 
-        for u in game.players.values():
-            if u['username'] not in game.data['connected']:
+        for username in game.players.values_list('user__username', flat=True):
+            if username not in game.data['connected']:
                 return False
         return True
 
@@ -153,8 +153,6 @@ class GameConsumer(WebsocketConsumer):
 
         if data == 'ok':
             self.save_connected()
-            players_are_connected = self.check_all_connected()
-
             if self.check_all_connected():
                 self.start_game()
         else:

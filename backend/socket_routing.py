@@ -182,8 +182,8 @@ class GameConsumer(WebsocketConsumer):
     def is_score_a_tie(self):
         game = self.game
         score_data = game.data['score']
-        player_a = game.players.values()[0]['username']
-        player_b = game.players.values()[1]['username']
+        player_a = User.objects.get(pk=game.players.values()[0].get('user_id')).username
+        player_b = User.objects.get(pk=game.players.values()[1].get('user_id')).username
         return score_data[player_a] == score_data[player_b]
 
     def check_game_end(self):
@@ -199,14 +199,14 @@ class GameConsumer(WebsocketConsumer):
             return
         
         score_data = game.data['score']
-        player_a = game.players.values()[0]['username']
-        player_b = game.players.values()[1]['username']
+        player_a = User.objects.get(pk=game.players.values()[0].get('user_id')).username
+        player_b = User.objects.get(pk=game.players.values()[1].get('user_id')).username
 
-        p_a = Player.objects.get(username=player_a)
+        p_a = Player.objects.get(user__username=player_a)
         p_a.score = p_a.score + score_data[player_a]
         p_a.save()
         
-        p_b = Player.objects.get(username=player_b)
+        p_b = Player.objects.get(user__username=player_b)
         p_b.score = p_b.score + score_data[player_b]
         p_b.save()
 
@@ -274,7 +274,7 @@ class GameConsumer(WebsocketConsumer):
             game = self.game
             game.data['score'][winner] = game.data['score'][winner] + QUESTION_POINTS
             game.save()
-            current_round.winner = Player.objects.get(username=winner)
+            current_round.winner = Player.objects.get(user__username=winner)
             current_round.finished = True
             current_round.save()
 
@@ -349,7 +349,7 @@ class GameConsumer(WebsocketConsumer):
             {
                 'type': 'round_winner',
                 'data': {
-                    'winner': current_round.winner.username if current_round.winner else None,
+                    'winner': current_round.winner.user.username if current_round.winner else None,
                     'answers': answers
                 }
             }

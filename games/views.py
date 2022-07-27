@@ -51,7 +51,8 @@ class GameView(mixins.CreateModelMixin,
                 'data': {
                     'invited': opponent.user.username,
                     'invited_by': SimplePlayerSerializer().to_representation(creator),
-                    'channel': serializer.data['channel']
+                    'channel': serializer.data['channel'],
+                    'game_id': serializer.data['id']
                 }
             }
         )

@@ -32,7 +32,6 @@ class PlayersList(viewsets.ViewSet):
 
         return Response({
             'players': serializer.data,
-            'you': list(queryset.values_list('pk', flat=True)).index(request.user.pk)
         })
 
 class MyProfile(viewsets.ViewSet):
